@@ -57,7 +57,9 @@ Time windows are sized with `/count` and recursively split before any query can 
 
 - A long historical `start_date` can require many count and query requests.
 - The tap uses one request at a time and backs off on transient API failures.
-- Unit tests are offline; live tests, when added, should be run explicitly with `RUN_LIVE_TESTS=1`.
+- Unit tests are offline; live tests should be run explicitly with `RUN_LIVE_TESTS=1`.
+- Deleted or retracted events are not emitted because the tap does not request USGS's
+  `includedeleted` extension.
 
 ## Built with Codex
 

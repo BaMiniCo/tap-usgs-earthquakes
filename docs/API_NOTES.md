@@ -8,7 +8,7 @@ were made with `curl` and a descriptive User-Agent.
 Request:
 
 ```sh
-curl -A 'tap-usgs-earthquakes (+https://github.com/example/tap-usgs-earthquakes)' \
+curl -A 'tap-usgs-earthquakes (+https://github.com/BaMiniCo/tap-usgs-earthquakes)' \
   'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2026-10-01T00:00:00Z&endtime=2026-10-02T00:00:00Z&limit=3&offset=1&orderby=time-asc'
 ```
 
@@ -45,7 +45,7 @@ defaults to the present time. A live request with only `updatedafter` returned a
 current event:
 
 ```sh
-curl -A 'tap-usgs-earthquakes (+https://github.com/example/tap-usgs-earthquakes)' \
+curl -A 'tap-usgs-earthquakes (+https://github.com/BaMiniCo/tap-usgs-earthquakes)' \
   'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=1&updatedafter=2026-10-30T00:00:00Z'
 ```
 
@@ -92,15 +92,15 @@ The client should include the useful USGS error text in its raised error.
 The following real responses are stored in `tests/fixtures/`:
 
 ```sh
-curl -A 'tap-usgs-earthquakes (+https://github.com/example/tap-usgs-earthquakes)' \
+curl -A 'tap-usgs-earthquakes (+https://github.com/BaMiniCo/tap-usgs-earthquakes)' \
   'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2026-10-01T00:00:00Z&endtime=2026-10-02T00:00:00Z&limit=3&offset=1&orderby=time-asc'
 
-curl -A 'tap-usgs-earthquakes (+https://github.com/example/tap-usgs-earthquakes)' \
+curl -A 'tap-usgs-earthquakes (+https://github.com/BaMiniCo/tap-usgs-earthquakes)' \
   'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2026-10-01T00:00:00Z&endtime=2026-10-02T00:00:00Z&limit=3&offset=4&orderby=time-asc'
 
-curl -A 'tap-usgs-earthquakes (+https://github.com/example/tap-usgs-earthquakes)' \
+curl -A 'tap-usgs-earthquakes (+https://github.com/BaMiniCo/tap-usgs-earthquakes)' \
   'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2026-10-01&endtime=2026-10-02&minmagnitude=9.9'
 
-curl -A 'tap-usgs-earthquakes (+https://github.com/example/tap-usgs-earthquakes)' \
+curl -A 'tap-usgs-earthquakes (+https://github.com/BaMiniCo/tap-usgs-earthquakes)' \
   'https://earthquake.usgs.gov/fdsnws/event/1/count?format=geojson&starttime=2026-10-01&endtime=2026-10-02'
 ```

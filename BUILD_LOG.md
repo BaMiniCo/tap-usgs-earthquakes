@@ -33,6 +33,15 @@ Results in this workspace:
 - `ruff check .`: passed
 - `ruff format --check .`: passed
 - `mypy tap_usgs_earthquakes`: passed
-- `pytest`: 7 passed, 26 live tests deselected by default
+- `pytest`: 8 passed, 26 live tests deselected by default
 - Singer SDK live standard suite: 26 passed
 - Meltano quickstart: succeeded with 1,936 records and an updated incremental state
+
+## Review fixes
+
+- Added Meltano capabilities for catalog, discovery, state, metadata, and stream maps.
+- Replaced placeholder repository URLs and made the default User-Agent actionable.
+- Applied the incremental bookmark to `/count` and skipped empty windows.
+- Added release metadata, an MIT license, deleted-event documentation, and an end-to-end incremental test.
+- Refactored requests through `RESTStream` so SDK metrics, validation, retries, and backoff are active;
+  the custom wait generator honors numeric and HTTP-date `Retry-After` values.

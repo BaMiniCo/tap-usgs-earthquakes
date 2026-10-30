@@ -10,11 +10,17 @@ plugins:
     namespace: tap_usgs_earthquakes
     pip_url: -e .
     executable: tap-usgs-earthquakes
+    capabilities:
+    - catalog
+    - discover
+    - state
+    - about
+    - stream-maps
     settings:
     - name: start_date
       kind: date_iso8601
     - name: min_magnitude
-      kind: string
+      kind: decimal
     - name: window_days
       kind: integer
     - name: user_agent

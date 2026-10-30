@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import json
 import time
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Generator, Iterable, Iterator, Mapping
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any, cast
 
-import requests
 from singer_sdk.streams import RESTStream
 
 BASE_URL = "https://earthquake.usgs.gov/fdsnws/event/1"
 PAGE_SIZE = 1000
 MAX_RESULTS = 20_000
+DEFAULT_USER_AGENT = "tap-usgs-earthquakes (+https://github.com/BaMiniCo/tap-usgs-earthquakes)"
 
 
 class EarthquakesStream(RESTStream):
@@ -30,7 +30,7 @@ class EarthquakesStream(RESTStream):
 
     @property
     def http_headers(self) -> dict[str, str]:
-        return {"User-Agent": self.config.get("user_agent", "tap-usgs-earthquakes")}
+        return {"User-Agent": self.config.get("user_agent", DEFAULT_USER_AGENT)}
 
     def get_url_params(
         self, context: Mapping[str, Any] | None, next_page_token: Any
@@ -48,6 +48,28 @@ class EarthquakesStream(RESTStream):
 
     def prepare_request_payload(self, *args: Any, **kwargs: Any) -> None:
         return None
+
+    @property
+    def timeout(self) -> int:
+        return 60
+
+    def backoff_wait_generator(self) -> Generator[float, Any, None]:
+        delay = 1.0
+        yield 0.0
+        while True:
+            exception = yield delay
+            response = getattr(exception, "response", None)
+            retry_after = response.headers.get("Retry-After") if response else None
+            if retry_after and retry_after.isdigit():
+                delay = float(retry_after)
+            elif retry_after:
+                retry_at = parsedate_to_datetime(retry_after)
+                delay = max(0.0, retry_at.timestamp() - time.time())
+            else:
+                delay *= 2
+
+    def backoff_jitter(self, value: float) -> float:
+        return value
 
     def _start_date(self) -> datetime:
         configured = self.config.get("start_date")
@@ -85,37 +107,15 @@ class EarthquakesStream(RESTStream):
         return record
 
     def _request_json(self, params: dict[str, Any], path: str = "/query") -> dict[str, Any]:
-        for attempt in range(5):
-            try:
-                response = requests.get(
-                    f"{self.url_base}{path}",
-                    params=params,
-                    headers=self.http_headers,
-                    timeout=60,
-                )
-            except requests.RequestException:
-                if attempt == 4:
-                    raise
-                time.sleep(2**attempt)
-                continue
-            if response.status_code in {429, 500, 502, 503, 504}:
-                if attempt == 4:
-                    response.raise_for_status()
-                retry_after = response.headers.get("Retry-After")
-                if retry_after and retry_after.isdigit():
-                    delay = float(retry_after)
-                elif retry_after:
-                    retry_at = parsedate_to_datetime(retry_after)
-                    delay = max(0, retry_at.timestamp() - time.time())
-                else:
-                    delay = 2**attempt
-                time.sleep(delay)
-                continue
-            if response.status_code == 400:
-                raise RuntimeError(f"USGS API request failed (400): {response.text.strip()}")
-            response.raise_for_status()
-            return cast(dict[str, Any], response.json())
-        raise RuntimeError("USGS API request failed after retries")
+        prepared_request = self.build_prepared_request(
+            method="GET",
+            url=f"{self.url_base}{path}",
+            params=params,
+            headers=self.http_headers,
+        )
+        request = self.request_decorator(self._request)
+        response = request(prepared_request, None)
+        return cast(dict[str, Any], response.json())
 
     def _count(self, start: datetime, end: datetime) -> int:
         params: dict[str, Any] = {
@@ -125,6 +125,9 @@ class EarthquakesStream(RESTStream):
         }
         if self.config.get("min_magnitude") is not None:
             params["minmagnitude"] = self.config["min_magnitude"]
+        bookmark = self.get_starting_replication_key_value({})
+        if bookmark:
+            params["updatedafter"] = str(bookmark)
         return int(self._request_json(params, path="/count")["count"])
 
     def _windows(self, start: datetime, end: datetime) -> Iterator[tuple[datetime, datetime]]:
@@ -139,6 +142,8 @@ class EarthquakesStream(RESTStream):
         self, start: datetime, end: datetime
     ) -> Iterator[tuple[datetime, datetime]]:
         count = self._count(start, end)
+        if count == 0:
+            return
         if count <= MAX_RESULTS:
             yield start, end
             return

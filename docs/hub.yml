@@ -1,0 +1,18 @@
+name: tap-usgs-earthquakes
+namespace: tap_usgs_earthquakes
+pip_url: tap-usgs-earthquakes
+capabilities:
+- discover
+- catalog
+- state
+settings:
+- name: start_date
+  kind: date_iso8601
+- name: min_magnitude
+  kind: string
+- name: window_days
+  kind: integer
+- name: user_agent
+  kind: string
+select:
+- earthquakes.*

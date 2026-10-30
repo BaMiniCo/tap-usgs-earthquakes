@@ -1,0 +1,33 @@
+project_id: tap-usgs-earthquakes
+default_environment: dev
+
+environments:
+- name: dev
+
+plugins:
+  extractors:
+  - name: tap-usgs-earthquakes
+    namespace: tap_usgs_earthquakes
+    pip_url: -e .
+    executable: tap-usgs-earthquakes
+    settings:
+    - name: start_date
+      kind: date_iso8601
+    - name: min_magnitude
+      kind: string
+    - name: window_days
+      kind: integer
+    - name: user_agent
+      kind: string
+    config:
+      min_magnitude: 2.5
+
+  loaders:
+  - name: target-jsonl
+    namespace: target_jsonl
+    pip_url: target-jsonl
+
+jobs:
+- name: quake-sync
+  tasks:
+  - tap-usgs-earthquakes target-jsonl
